@@ -1,0 +1,21 @@
+# STM32CubeIDE
+Debug/
+Release/
+
+# Build artifacts
+*.o
+*.d
+*.su
+*.map
+*.list
+*.elf
+*.hex
+*.bin
+
+# Eclipse
+.settings/
+.metadata/
+
+# OS
+Thumbs.db
+.DS_Store
