@@ -21,6 +21,7 @@
 #include "mcu_validation.h"
 
 #include "firmware_size_validation.h"
+#include "hmac_sha256.h"
 
 uint8_t InstallFirmware(void)
 
@@ -47,6 +48,9 @@ uint8_t InstallFirmware(void)
             hmacMetadata.hmac,
             0,
             sizeof(hmacMetadata.hmac));
+    HMAC_SHA256_CTX hmacCtx;
+
+    uint8_t calculatedHMAC[HMAC_SHA256_SIZE];
 
 
 
@@ -62,12 +66,20 @@ uint8_t InstallFirmware(void)
     {
         return 0;
     }
-    /*
-     * TODO:
-     * Verify HMAC over:
-     * 1. Metadata header (with HMAC field zeroed)
-     * 2. Encrypted firmware stored in W25Q128
-     */
+    /*----------------------------------------------------------
+     * Streaming HMAC Verification
+     *---------------------------------------------------------*/
+
+    HMAC_SHA256_Init(
+            &hmacCtx,
+            OTA_HMAC_Key,
+            sizeof(OTA_HMAC_Key));
+
+    /* Hash metadata with HMAC field cleared */
+    HMAC_SHA256_Update(
+            &hmacCtx,
+            (uint8_t *)&hmacMetadata,
+            sizeof(OTA_Metadata_t));
 
     Flash_EraseApplication();
 
@@ -92,6 +104,11 @@ uint8_t InstallFirmware(void)
 
         W25Q128_ReadData(
                 externalFlashAddress,
+                firmwareBuffer,
+                chunkSize);
+        /* Update HMAC using encrypted firmware */
+        HMAC_SHA256_Update(
+                &hmacCtx,
                 firmwareBuffer,
                 chunkSize);
         Crypto_DecryptFirmware(
@@ -129,10 +146,30 @@ uint8_t InstallFirmware(void)
 
         externalFlashAddress += chunkSize;
     }
+    /* Finish HMAC calculation */
+    HMAC_SHA256_Final(
+            &hmacCtx,
+            calculatedHMAC);
 
-    if(VerifyInstalledFirmware())
+    /* Compare with metadata HMAC */
+    if(memcmp(
+            calculatedHMAC,
+            metadata.hmac,
+            HMAC_SHA256_SIZE) != 0)
     {
-         return 0;
+        /* Authentication failed */
+        return 0;
     }
+    if(!VerifyInstalledFirmware())
+    {
+        return 0;
+    }
+
+    /* Installation successful */
+    OTA_ClearUpdatePending();
+
+    /* Optional: update stored firmware version */
+    // FirmwareVersion_SetCurrent(metadata.firmwareVersion);
+
     return 1;
 }
