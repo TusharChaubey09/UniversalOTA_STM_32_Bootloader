@@ -32,15 +32,13 @@ void BootManager_Run(void)
 	        if(metadata.forceOverride ||
 	           ValidateFirmwareVersion(metadata.firmwareVersion))
 	        {
-	            InstallFirmware();
+	        	if(InstallFirmware())
+	        	{
+	        	    FirmwareVersion_SetCurrent(
+	        	            metadata.firmwareVersion);
 
-	            if(VerifyInstalledFirmware())
-	            {
-	                FirmwareVersion_SetCurrent(
-	                        metadata.firmwareVersion);
-
-	                OTA_ClearUpdatePending();
-	            }
+	        	    OTA_ClearUpdatePending();
+	        	}
 	        }
 	    }
 	}
