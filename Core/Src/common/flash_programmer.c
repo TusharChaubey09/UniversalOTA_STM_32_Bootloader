@@ -38,15 +38,24 @@ void Flash_ErasePage(uint32_t pageNumber)
 
     HAL_FLASH_Lock();
 }
-void Flash_WriteApplication(uint32_t address,
-                            uint64_t data)
+uint8_t Flash_WriteApplication(uint32_t address,
+                               uint64_t data)
 {
+    HAL_StatusTypeDef status;
+
     HAL_FLASH_Unlock();
 
-    HAL_FLASH_Program(
-            FLASH_TYPEPROGRAM_DOUBLEWORD,
-            address,
-            data);
+    status = HAL_FLASH_Program(
+                FLASH_TYPEPROGRAM_DOUBLEWORD,
+                address,
+                data);
 
     HAL_FLASH_Lock();
+
+    if(status != HAL_OK)
+    {
+        return 0;
+    }
+
+    return 1;
 }

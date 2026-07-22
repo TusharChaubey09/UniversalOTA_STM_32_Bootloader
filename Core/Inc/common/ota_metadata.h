@@ -37,6 +37,7 @@ typedef struct
     uint8_t reservedExtension[OTA_RESERVED_EXTENSION_SIZE];
 
 } OTA_Metadata_t;
+_Static_assert(sizeof(OTA_Metadata_t) == 128, "OTA Metadata size is incorrect");
 
 typedef enum
 {

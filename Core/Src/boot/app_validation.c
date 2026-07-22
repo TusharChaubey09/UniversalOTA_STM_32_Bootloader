@@ -4,24 +4,13 @@
 uint8_t IsApplicationValid(void)
 {
     uint32_t appStackPointer;
-    uint32_t resetHandler;
 
-    appStackPointer = *(volatile uint32_t *)APPLICATION_START_ADDRESS;
-    resetHandler    = *(volatile uint32_t *)(APPLICATION_START_ADDRESS + 4U);
+    appStackPointer = *(volatile uint32_t*)APPLICATION_START_ADDRESS;
 
-    /* Validate Stack Pointer */
-    if((appStackPointer < RAM_START_ADDRESS) ||
-       (appStackPointer >= RAM_END_ADDRESS))
+    if((appStackPointer & 0x2FFE0000U) == 0x20000000U)
     {
-        return 0;
+        return 1;
     }
 
-    /* Validate Reset Handler */
-    if((resetHandler < APPLICATION_START_ADDRESS) ||
-       (resetHandler >= FLASH_END_ADDRESS))
-    {
-        return 0;
-    }
-
-    return 1;
+    return 0;
 }

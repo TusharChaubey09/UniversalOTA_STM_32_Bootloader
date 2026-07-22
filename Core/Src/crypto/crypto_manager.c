@@ -2,6 +2,7 @@
 #include "aes.h"
 #include "hmac_sha256.h"
 
+static struct AES_ctx gAesCtx;
 const uint8_t OTA_AES_Key[32] =
 {
     0x01, 0x02, 0x03, 0x04,
@@ -47,22 +48,19 @@ uint8_t Crypto_VerifyHMAC(
             expectedHMAC);
 }
 
-uint8_t Crypto_DecryptFirmware(
-        uint8_t *buffer,
-        uint32_t length,
-        const uint8_t *iv)
+void Crypto_AESInit(const uint8_t *iv)
 {
-    struct AES_ctx ctx;
-
     AES_init_ctx_iv(
-            &ctx,
+            &gAesCtx,
             OTA_AES_Key,
             iv);
+}
 
+void Crypto_AESDecryptChunk(uint8_t *buffer,
+                            uint32_t length)
+{
     AES_CBC_decrypt_buffer(
-            &ctx,
+            &gAesCtx,
             buffer,
             length);
-
-    return 1;
 }

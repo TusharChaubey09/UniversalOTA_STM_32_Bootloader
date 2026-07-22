@@ -88,6 +88,8 @@ uint8_t InstallFirmware(void)
     flashAddress = APPLICATION_START_ADDRESS;
 
     externalFlashAddress = OTA_FIRMWARE_ADDRESS;
+    /* Initialize AES-CBC streaming context once */
+    Crypto_AESInit(metadata.iv);
 
     while(bytesRemaining > 0)
     {
@@ -111,10 +113,9 @@ uint8_t InstallFirmware(void)
                 &hmacCtx,
                 firmwareBuffer,
                 chunkSize);
-        Crypto_DecryptFirmware(
+        Crypto_AESDecryptChunk(
                 firmwareBuffer,
-                chunkSize,
-                metadata.iv);
+                chunkSize);
 
         for(uint32_t i = 0; i < chunkSize; i += 8)
         {
@@ -135,9 +136,12 @@ uint8_t InstallFirmware(void)
                    &firmwareBuffer[i],
                    copySize);
 
-            Flash_WriteApplication(
+            if(!Flash_WriteApplication(
                     flashAddress + i,
-                    data);
+                    data))
+            {
+                return 0;
+            }
         }
 
         bytesRemaining -= chunkSize;
